@@ -38,6 +38,7 @@ model User {
 model Home {
   id                    Int           @id @default(autoincrement())
   address               String
+  city                  String
   number_of_bedrooms    Int
   number_of_bathrooms   Float
   listed_date           DateTime      @default(now())
