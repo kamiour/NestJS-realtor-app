@@ -2,6 +2,7 @@ import { Controller, Delete, Get, Post, Put, Query } from '@nestjs/common';
 import { Body, Param } from '@nestjs/common/decorators';
 import { ParseIntPipe } from '@nestjs/common/pipes';
 import { PropertyType } from '@prisma/client';
+import { User, UserJwtInfo } from 'src/user/decorators/user.decorator';
 import { CreateHomeDto, HomeResponseDto, UpdateHomeDto } from './dto/home.dto';
 import { HomeService } from './home.service';
 
@@ -39,8 +40,11 @@ export class HomeController {
   }
 
   @Post()
-  createHome(@Body() body: CreateHomeDto): Promise<HomeResponseDto> {
-    return this.homeService.createHome(body);
+  createHome(
+    @Body() body: CreateHomeDto,
+    @User() user: UserJwtInfo,
+  ): Promise<HomeResponseDto> {
+    return this.homeService.createHome(body, user.id);
   }
 
   @Put(':id')
