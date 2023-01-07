@@ -13,6 +13,27 @@ interface GetHomesParam {
   propertyType?: PropertyType;
 }
 
+interface CreateHomeParams {
+  address: string;
+  numberOfBedrooms: number;
+  numberOfBathrooms: number;
+  city: string;
+  price: number;
+  landSize: number;
+  propertyType: PropertyType;
+  images: { url: string }[];
+}
+
+interface UpdateHomeParams {
+  address?: string;
+  numberOfBedrooms?: number;
+  numberOfBathrooms?: number;
+  city?: string;
+  price?: number;
+  landSize?: number;
+  propertyType?: PropertyType;
+}
+
 @Injectable()
 export class HomeService {
   constructor(private prismaService: PrismaService) {}
@@ -92,5 +113,66 @@ export class HomeService {
     }
 
     return new HomeResponseDto(home);
+  }
+
+  async createHome(body: CreateHomeParams): Promise<HomeResponseDto> {
+    const home = await this.prismaService.home.create({
+      data: {
+        address: body.address,
+        number_of_bathrooms: body.numberOfBathrooms,
+        number_of_bedrooms: body.numberOfBedrooms,
+        land_size: body.landSize,
+        city: body.city,
+        price: body.price,
+        property_type: body.propertyType,
+        realtor_id: 1,
+      },
+    });
+
+    const images = body.images.map((image) => ({ ...image, home_id: home.id }));
+
+    await this.prismaService.image.createMany({
+      data: images,
+    });
+
+    return new HomeResponseDto(home);
+  }
+
+  async updateHome(
+    id: number,
+    body: UpdateHomeParams,
+  ): Promise<HomeResponseDto> {
+    const home = await this.prismaService.home.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!home) {
+      throw new NotFoundException();
+    }
+
+    const updatedHome = await this.prismaService.home.update({
+      where: {
+        id,
+      },
+      data: body,
+    });
+
+    return new HomeResponseDto(updatedHome);
+  }
+
+  async deleteHome(id: number): Promise<void> {
+    await this.prismaService.image.deleteMany({
+      where: {
+        home_id: id,
+      },
+    });
+
+    await this.prismaService.home.delete({
+      where: {
+        id,
+      },
+    });
   }
 }
