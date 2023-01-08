@@ -6,10 +6,13 @@ import {
   Put,
   Query,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { Body, Param } from '@nestjs/common/decorators';
 import { ParseIntPipe } from '@nestjs/common/pipes';
-import { PropertyType } from '@prisma/client';
+import { PropertyType, UserType } from '@prisma/client';
+import { Roles } from 'src/decorators/roles.decorator';
+import { AuthGuard } from 'src/guards/auth.guard';
 import { User, UserJwtInfo } from 'src/user/decorators/user.decorator';
 import { CreateHomeDto, HomeResponseDto, UpdateHomeDto } from './dto/home.dto';
 import { HomeService } from './home.service';
@@ -47,12 +50,13 @@ export class HomeController {
     return this.homeService.getHome(id);
   }
 
+  @Roles(UserType.REALTOR, UserType.ADMIN)
+  @UseGuards(AuthGuard)
   @Post()
-  createHome(
-    @Body() body: CreateHomeDto,
-    @User() user: UserJwtInfo,
-  ): Promise<HomeResponseDto> {
-    return this.homeService.createHome(body, user.id);
+  createHome(@Body() body: CreateHomeDto, @User() user: UserJwtInfo) {
+    // Promise<HomeResponseDto>
+    return 'created home';
+    // return this.homeService.createHome(body, user.id);
   }
 
   @Put(':id')
