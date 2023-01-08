@@ -1,11 +1,12 @@
 import * as bcrypt from 'bcryptjs';
 import { Body, Controller, Post } from '@nestjs/common';
-import { Param } from '@nestjs/common/decorators';
+import { Get, Param } from '@nestjs/common/decorators';
 import { UnauthorizedException } from '@nestjs/common/exceptions';
 import { ParseEnumPipe } from '@nestjs/common/pipes';
 import { UserType } from '@prisma/client';
 import { GenerateProductKeyDto, SigninDto, SignupDto } from '../dtos/auth.dto';
 import { AuthService } from './auth.service';
+import { User, UserJwtInfo } from '../decorators/user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -44,5 +45,10 @@ export class AuthController {
   @Post('key')
   generateProductKey(@Body() body: GenerateProductKeyDto) {
     return this.authService.generateProductKey(body.email, body.userType);
+  }
+
+  @Get('me')
+  me(@User() user: UserJwtInfo): UserJwtInfo {
+    return user;
   }
 }

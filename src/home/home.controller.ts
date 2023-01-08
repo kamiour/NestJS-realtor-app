@@ -1,4 +1,12 @@
-import { Controller, Delete, Get, Post, Put, Query } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Put,
+  Query,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Body, Param } from '@nestjs/common/decorators';
 import { ParseIntPipe } from '@nestjs/common/pipes';
 import { PropertyType } from '@prisma/client';
@@ -48,15 +56,31 @@ export class HomeController {
   }
 
   @Put(':id')
-  updateHome(
+  async updateHome(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateHomeDto,
+    @User() user: UserJwtInfo,
   ): Promise<HomeResponseDto> {
+    const realtor = await this.homeService.getRealtorByHome(id);
+
+    if (realtor.id !== user.id) {
+      throw new UnauthorizedException();
+    }
+
     return this.homeService.updateHome(id, body);
   }
 
   @Delete(':id')
-  deleteHome(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  async deleteHome(
+    @Param('id', ParseIntPipe) id: number,
+    @User() user: UserJwtInfo,
+  ): Promise<void> {
+    const realtor = await this.homeService.getRealtorByHome(id);
+
+    if (realtor.id !== user.id) {
+      throw new UnauthorizedException();
+    }
+
     return this.homeService.deleteHome(id);
   }
 }
