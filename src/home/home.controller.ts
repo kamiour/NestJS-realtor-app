@@ -6,15 +6,18 @@ import {
   Put,
   Query,
   UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
 import { Body, Param } from '@nestjs/common/decorators';
 import { ParseIntPipe } from '@nestjs/common/pipes';
-import { PropertyType, UserType } from '@prisma/client';
+import { Message, PropertyType, UserType } from '@prisma/client';
 import { Roles } from 'src/decorators/roles.decorator';
-import { AuthGuard } from 'src/guards/auth.guard';
 import { User, UserJwtInfo } from 'src/user/decorators/user.decorator';
-import { CreateHomeDto, HomeResponseDto, UpdateHomeDto } from './dto/home.dto';
+import {
+  CreateHomeDto,
+  HomeResponseDto,
+  InquireDto,
+  UpdateHomeDto,
+} from './dto/home.dto';
 import { HomeService } from './home.service';
 
 @Controller('home')
@@ -50,15 +53,16 @@ export class HomeController {
     return this.homeService.getHome(id);
   }
 
-  @Roles(UserType.REALTOR, UserType.ADMIN)
-  @UseGuards(AuthGuard)
+  @Roles(UserType.REALTOR)
   @Post()
-  createHome(@Body() body: CreateHomeDto, @User() user: UserJwtInfo) {
-    // Promise<HomeResponseDto>
-    return 'created home';
-    // return this.homeService.createHome(body, user.id);
+  createHome(
+    @Body() body: CreateHomeDto,
+    @User() user: UserJwtInfo,
+  ): Promise<HomeResponseDto> {
+    return this.homeService.createHome(body, user.id);
   }
 
+  @Roles(UserType.REALTOR)
   @Put(':id')
   async updateHome(
     @Param('id', ParseIntPipe) id: number,
@@ -74,6 +78,7 @@ export class HomeController {
     return this.homeService.updateHome(id, body);
   }
 
+  @Roles(UserType.REALTOR)
   @Delete(':id')
   async deleteHome(
     @Param('id', ParseIntPipe) id: number,
@@ -86,5 +91,15 @@ export class HomeController {
     }
 
     return this.homeService.deleteHome(id);
+  }
+
+  @Roles(UserType.BUYER)
+  @Post('inquire/:id')
+  inquire(
+    @Param('id', ParseIntPipe) homeId: number,
+    @User() user: UserJwtInfo,
+    @Body() body: InquireDto,
+  ): Promise<Message> {
+    return this.homeService.inquire(user, homeId, body.message);
   }
 }
