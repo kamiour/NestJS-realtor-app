@@ -220,4 +220,22 @@ export class HomeService {
       },
     });
   }
+
+  getHomeMessages(homeId: number): Promise<Partial<Message>[]> {
+    return this.prismaService.message.findMany({
+      where: {
+        home_id: homeId,
+      },
+      select: {
+        message: true,
+        buyer: {
+          select: {
+            name: true,
+            phone: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
 }
