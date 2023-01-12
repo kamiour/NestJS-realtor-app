@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PropertyType } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -57,6 +58,24 @@ const mockGetHomes = [
   },
 ];
 
+const mockHome = {
+  id: 2,
+  address: '1 Avenue',
+  city: 'Ottawa',
+  price: 500000,
+  image: 'url3',
+  numberOfBedrooms: 2,
+  numberOfBathrooms: 2,
+  listedDate: '2023-01-04T21:36:14.280Z',
+  landSize: 100,
+  propertyType: 'CONDO',
+};
+
+const mockImages = [
+  { id: 1, url: 'url1' },
+  { id: 2, url: 'url2' },
+];
+
 describe('HomeService', () => {
   let service: HomeService;
   let prismaService: PrismaService;
@@ -70,6 +89,10 @@ describe('HomeService', () => {
           useValue: {
             home: {
               findMany: jest.fn().mockReturnValue(mockGetHomes),
+              create: jest.fn().mockReturnValue(mockHome),
+            },
+            image: {
+              createMany: jest.fn().mockReturnValue(mockImages),
             },
           },
         },
@@ -117,6 +140,84 @@ describe('HomeService', () => {
       await service.getHomes(filters);
 
       expect(mockPrismaFindManyHomes).toBeCalledWith(expectedPayload);
+    });
+
+    it('should throw not found exception if no homes found', async () => {
+      const mockPrismaFindManyHomes = jest.fn().mockReturnValue([]);
+
+      jest
+        .spyOn(prismaService.home, 'findMany')
+        .mockImplementation(mockPrismaFindManyHomes);
+
+      await expect(service.getHomes(filters)).rejects.toThrowError(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('createHome', () => {
+    const mockCreateHomePayload = {
+      price: 450000,
+      landSize: 50,
+      city: 'Kitchener',
+      propertyType: PropertyType.CONDO,
+      numberOfBathrooms: 2,
+      numberOfBedrooms: 2,
+      address: '3 Str',
+      images: [
+        {
+          url: 'url1',
+        },
+        {
+          url: 'url2',
+        },
+      ],
+    };
+
+    it('should call prisma home.create with correct payload', async () => {
+      const mockPrismaHomeCreate = jest.fn().mockReturnValue(mockHome);
+
+      jest
+        .spyOn(prismaService.home, 'create')
+        .mockImplementation(mockPrismaHomeCreate);
+
+      await service.createHome(mockCreateHomePayload, 1);
+
+      expect(mockPrismaHomeCreate).toBeCalledWith({
+        data: {
+          address: mockCreateHomePayload.address,
+          number_of_bathrooms: mockCreateHomePayload.numberOfBathrooms,
+          number_of_bedrooms: mockCreateHomePayload.numberOfBedrooms,
+          land_size: mockCreateHomePayload.landSize,
+          city: mockCreateHomePayload.city,
+          price: mockCreateHomePayload.price,
+          property_type: mockCreateHomePayload.propertyType,
+          realtor_id: 1,
+        },
+      });
+    });
+
+    it('should call prisma image.createMany with correct payload', async () => {
+      const mockPrismaImageCreateMany = jest.fn().mockReturnValue(mockImages);
+
+      jest
+        .spyOn(prismaService.image, 'createMany')
+        .mockImplementation(mockPrismaImageCreateMany);
+
+      await service.createHome(mockCreateHomePayload, 1);
+
+      expect(mockPrismaImageCreateMany).toBeCalledWith({
+        data: [
+          {
+            home_id: mockHome.id,
+            url: 'url1',
+          },
+          {
+            home_id: mockHome.id,
+            url: 'url2',
+          },
+        ],
+      });
     });
   });
 });
